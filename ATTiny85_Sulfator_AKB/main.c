@@ -32,6 +32,7 @@
 
 static uint64_t last_timer_v;
 static uint64_t last_led_blink_v;
+static uint64_t last_send_info_v;
 
 static time_t curr_time, start_time, end_time;
 static int8_t start_mday, last_mday;
@@ -53,7 +54,7 @@ static charge_cycle_t m_cycle = {
 static uint8_t pot_charge_set;
 static uint8_t led_blink_times;
 
-static volatile float v_bat = 0.0;
+static float v_bat = 0.0;
 
 ISR(TIM0_COMPA_vect) { sw_usart_ISR_timer_handler(); }
 ISR(TIM1_COMPA_vect) {
@@ -70,12 +71,15 @@ ISR(TIM1_COMPA_vect) {
 void main(void) {
 	init_me();
 
+	send_uart_msg("CYCLE_START\n");
+
 	do {
 
 		wdt_reset();
 		localtime_r(&curr_time, &time_d);
 
-		timer_millis_task_tick(&blink_led, &last_led_blink_v, 2500);
+		timer_millis_task_tick(&callback_send_info, &last_send_info_v, SEC_TO_MS(1));
+		timer_millis_task_tick(&callback_blink_led, &last_led_blink_v, SEC_TO_MS(2.5));
 
 		// считаем, сколько уже дней работает цикл заряда-разряда АКБ
 		if (last_mday != time_d.tm_mday) {
@@ -96,13 +100,18 @@ void main(void) {
 		if (m_cycle.discharging) {
 			if (DISCHARGING_RL_STATE() == LOW) {
 				TIMER0_DISABLE_PWM_CLK(); // отключаем подачу импульсов
+				_delay_ms(100);
 				DISCHARGING_RL_ENABLE(); // переключаем на режим разряда АКБ
 				led_blink_times = 1;
+
+				send_uart_msg("DISCH_START\n");
 			}
 
 			// ждем, когда батарея разрядится до 10.5В
 			if (get_battery_level() > TARGET_CHARGE_LEVEL_DISCH)
 				continue;
+
+			send_uart_msg("DISCH_END\n");
 
 			if (start_mday <= MAX_CHARGE_CYCLE_IN_DAYS)
 				m_cycle.state = CHARGE_CYCLE_STATE_HALF; // батарея разрядилась - переходим к следующему режиму
@@ -200,6 +209,8 @@ void main(void) {
 			if ((time(NULL) - start_time) < HOUR_TO_SEC(8))
 				continue;
 
+			send_uart_msg("CYCLE_END\n");
+
 			m_cycle.full_curr_state = FALSE;
 			charge_ok(); // и уходим в режим индикации "Готово"
 		}
@@ -238,7 +249,7 @@ void init_me(void) {
 	set_system_time(mktime(&time_d));
 	curr_time = time(NULL);
 
-	//usart_init();
+	usart_init();
 
 	_delay_ms(200);
 
@@ -307,23 +318,21 @@ void charge_ok(void) {
 }
 
 void callback_send_info(void) {
-	char c_buff[12];
+	char c_buff[8];
 
-	if (TIMER0_PWM_IS_ENABLED())
+	// будем отправлять состояние АКБ только во время разрядки при нагрузке
+	if (!m_cycle.discharging)
 		return;
-/*
-	send_uart_msg("VER:0.2;");
-	send_uart_msg("BL:");
-	my_ftoa(bat_voltage, c_buff, 2);
-	send_uart_msg(c_buff);
-	send_uart_msg(";CYC:");
-	my_itoa_8(m_cycle.state, c_buff);
+
+	send_uart_msg("TIME: ");
+	send_uart_msg(asctime(&time_d));
+	send_uart_msg("; BATT_LEVEL: ");
+	my_ftoa(v_bat, c_buff, 2);
 	send_uart_msg(c_buff);
 	send_uart_msg(";\n");
-*/
 }
 
-void blink_led(void) {
+void callback_blink_led(void) {
 	for (uint8_t i = 0; i < led_blink_times; ++i) {
 		GPIO_B.port |= _BV(LED_STATUS_PIN);
 		_delay_ms(250);

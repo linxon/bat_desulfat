@@ -36,12 +36,6 @@
 #define USART_TX_SET_HIGH()				(USART_GPIO.port |=  _BV(USART_GPIO_TX_PIN))
 #define USART_TX_SET_LOW()				(USART_GPIO.port &= ~_BV(USART_GPIO_TX_PIN))
 
-#define USART_INT0_SETUP()				(MCUCR |=  _BV(ISC01))
-#define USART_INT0_INTRR_ENABLE()		(GIMSK |=  _BV(INT0))
-#define USART_INT0_INTRR_DISABLE()		(GIMSK &= ~_BV(INT0))
-#define USART_INT0_INTRR_IS_ENABLED()	(GIMSK & _BV(INT0))
-#define USART_INT0_INTRR_FLAG_FLUSH()	(GIFR |= _BV(INTF0))
-
 #define USART_TIMER0_TICKS2COUNT		(F_CPU / (USART_BAUDRATE * 8UL) - 1) // clk/8
 //#define USART_TIMER0_COMMAND_FREQ		(166666UL) // команды забирают себе примерно 6 микросекунд: 1 / 6e-6 = 166666 Hz
 //#define USART_TIMER0_PRESCALLER_FREQ	(F_CPU / 8UL) // предделитель таймера настроен на clk/8
@@ -74,7 +68,7 @@
 
 #define USART_TIMER0_INTRR_ENABLE() (					\
 	TIMSK |= _BV(OCIE0A),								\
-	TCCR0B |= _BV(CS01)									\
+	TCCR0B = _BV(CS01)									\
 )
 
 #define USART_TIMER0_INTRR_IS_ENABLED() (				\

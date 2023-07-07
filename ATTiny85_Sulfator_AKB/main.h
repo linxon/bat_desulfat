@@ -46,11 +46,9 @@
 )
 
 #define TIMER0_PWM_SETUP() (					\
-	TIMER0_RESET(),								\
 	GPIO_B.ddr |= _BV(PULSE_PWM_PIN),			\
 	TCCR0A |= _BV(WGM00) | _BV(WGM01),  /* включаем 7-й режим Fast PWM */ \
-	TCCR0A &= ~_BV(COM0B0) | ~_BV(COM0A0) | ~_BV(COM0A1), \
-	TCCR0A |= _BV(COM0B1),						\
+	TCCR0A &= ~_BV(COM0B0) | ~_BV(COM0B1) | ~_BV(COM0A0) | ~_BV(COM0A1), \
 	TCCR0B |= _BV(CS00) | _BV(CS01) | _BV(WGM02), /* выбираем clk/64 */ \
 	OCR0A = 125, /* задаем TOP значение. ѕолучаем clk/64/125 = 1000Hz */ \
 	OCR0B = 13 /* 125/10% = 12.5 */				\
@@ -67,8 +65,8 @@
 )
 #define TIMER0_PWM_IS_ENABLED()			(BIT_AS_BOOLEAN(TCCR0B, CS00) && BIT_AS_BOOLEAN(TCCR0B, CS01))
 
-#define UART_BEGIN()					(USART_TIMER0_SETUP())
-#define UART_END()						(TIMER0_PWM_SETUP())
+#define UART_BEGIN()					(TIMER0_RESET(), USART_TIMER0_SETUP())
+#define UART_END()						(TIMER0_RESET(), TIMER0_PWM_SETUP())
 
 #define SWITCH_TO_NEXT(next_state, curr_state)	\
 	do {										\
@@ -81,42 +79,11 @@
 			next_state = 0x1;					\
 	} while (0)
 
-
 #define ADC_CHANNEL_0					(0x0)
 #define ADC_CHANNEL_1					(0x1)
 #define ADC_CHANNEL_2					(0x2)
 #define ADC_CHANNEL_3					(0x3)
-
-#define ADC_SET_CHANNEL(ch)						\
-	do {										\
-		switch(ch) {							\
-			case ADC_CHANNEL_0: /* ADC0 */		\
-				ADMUX &= ~_BV(MUX0);			\
-				ADMUX &= ~_BV(MUX1);			\
-				ADMUX &= ~_BV(MUX2);			\
-				ADMUX &= ~_BV(MUX3);			\
-				break;							\
-			case ADC_CHANNEL_1:	/* ADC1 */		\
-				ADMUX |= _BV(MUX0);				\
-				ADMUX &= ~_BV(MUX1);			\
-				ADMUX &= ~_BV(MUX2);			\
-				ADMUX &= ~_BV(MUX3);			\
-				break;							\
-			case ADC_CHANNEL_2: /* ADC2 */		\
-				ADMUX &= ~_BV(MUX0);			\
-				ADMUX |= _BV(MUX1);				\
-				ADMUX &= ~_BV(MUX2);			\
-				ADMUX &= ~_BV(MUX3);			\
-				break;							\
-			case ADC_CHANNEL_3:	/* ADC3 */		\
-				ADMUX |= _BV(MUX0);				\
-				ADMUX |= _BV(MUX1);				\
-				ADMUX &= ~_BV(MUX2);			\
-				ADMUX &= ~_BV(MUX3);			\
-				break;							\
-		}										\
-	} while(0)
-
+#define ADC_SET_CHANNEL(ch)				(ADMUX &= 0xF0, ADMUX |= (ch << 0))
 #define ADC_START_CONV()						\
 	do {										\
 		ADCSRA |= _BV(ADSC);					\
@@ -144,6 +111,6 @@ static float get_battery_level(void);
 static void charge_err(void);
 static void charge_ok(void);
 static void callback_send_info(void);
-static void blink_led(void);
+static void callback_blink_led(void);
 
 #endif /* _MAIN_H_ */

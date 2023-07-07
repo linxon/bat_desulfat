@@ -15,7 +15,7 @@
 
 #define TIMER_MAX_TASK_SUPPORT	4
 
-#define SEC_TO_MS(sec)					(sec * 1000)
+#define SEC_TO_MS(sec)					(sec * 1000u)
 #define MIN_TO_SEC(min)					(min * 60u)
 #define HOUR_TO_SEC(hour)				(hour * ONE_HOUR)
 #define DAY_TO_SEC(day)					(day * ONE_DAY)
