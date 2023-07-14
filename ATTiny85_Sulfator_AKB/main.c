@@ -35,7 +35,7 @@ static uint64_t last_led_blink_v;
 static uint64_t last_send_info_v;
 
 static time_t curr_time, start_time, end_time;
-static int8_t start_mday, last_mday;
+static int8_t start_mday, last_mday, max_mday;
 static struct tm time_d = {
 	.tm_year = (2023 - 1900),
 	.tm_mon = JANUARY,
@@ -50,6 +50,8 @@ static charge_cycle_t m_cycle = {
 	.half_curr_state = FALSE,
 	.pulse_curr_state = FALSE
 };
+
+static bool uart_mode_en = FALSE;
 
 static uint8_t pot_charge_set;
 static uint8_t led_blink_times;
@@ -88,10 +90,14 @@ void main(void) {
 		}
 
 		// если за эти дни мы не вышли из цикла, то уходим в аварию
-		if (start_mday >= MAX_CHARGE_CYCLE_IN_DAYS+1 && !m_cycle.full_curr_state)
+		if (start_mday >= (max_mday + 1) && !m_cycle.full_curr_state)
 			charge_err();
 
-		// считаем, что у нас на потенциометре
+		// считаем, что у нас на потенциометрах
+		ADC_SET_CHANNEL(ADC_CHANNEL_2);
+		ADC_START_CONV();
+		max_mday = (uint8_t) (ADC / (1024 / MAX_CHARGE_CYCLE_IN_DAYS)) + 1;
+
 		ADC_SET_CHANNEL(ADC_CHANNEL_3);
 		ADC_START_CONV();
 		pot_charge_set = (uint8_t) (ADC / (1024 / MAX_CHARGE_TIME_IN_HOUR)) + 1;
@@ -113,7 +119,7 @@ void main(void) {
 
 			send_uart_msg("DISCH_END\n");
 
-			if (start_mday <= MAX_CHARGE_CYCLE_IN_DAYS)
+			if (start_mday <= max_mday)
 				m_cycle.state = CHARGE_CYCLE_STATE_HALF; // батарея разрядилась - переходим к следующему режиму
 			else
 				m_cycle.state = CHARGE_CYCLE_STATE_FULL; // или завершаем зарядку. Переходим на FULL CHARGE
@@ -219,10 +225,19 @@ void main(void) {
 }
 
 void init_me(void) {
-	wdt_enable(WDTO_2S);
+	wdt_enable(WDTO_4S);
 
-	GPIO_B.ddr |= _BV(LED_STATUS_PIN);
+	// выбираем режим индикации или режим ответа UART сообщений
+	// проверяем включена ли перемычка с подтягивающим резистором
+	GPIO_B.ddr &= ~_BV(LED_STATUS_PIN);
+	if (GPIO_B.pin & _BV(LED_STATUS_PIN))
+		uart_mode_en = TRUE;
+
+	_delay_ms(SEC_TO_MS(1));
+
+	GPIO_B.ddr |= _BV(LED_STATUS_PIN) | _BV(DISCH_PIN);
 	GPIO_B.port |= _BV(LED_STATUS_PIN);
+	GPIO_B.port &= ~_BV(DISCH_PIN);
 
 	// ADC
 	GPIO_B.ddr &= ~_BV(POT_CHARGE_SET_PIN) | ~_BV(BAT_LEVEL_ADC_PIN);
@@ -231,8 +246,6 @@ void init_me(void) {
 	ADMUX &= ~_BV(REFS0);
 	ADCSRA |= _BV(ADEN);
 
-	GPIO_B.ddr |= _BV(DISCH_PIN);
-	GPIO_B.port &= ~_BV(DISCH_PIN);
 	TIMER0_PWM_SETUP();
 
 	// Настраиваем таймер для timer_ISR_millis_counter()
@@ -251,12 +264,15 @@ void init_me(void) {
 
 	usart_init();
 
-	_delay_ms(200);
+	_delay_ms(SEC_TO_MS(1));
 
 	sei();
 }
 
 void send_uart_msg(const char *s) {
+	if (!uart_mode_en)
+		return;
+
 	UART_BEGIN();
 	while (*s != '\0')
 		tx_usart((char) *s++, NULL);
@@ -282,11 +298,10 @@ float get_battery_level(void) {
 }
 
 void charge_err(void) {
-	do {
-		wdt_reset();
-		TIMER0_DISABLE_PWM_CLK();
-		DISCHARGING_RL_ENABLE();
+	wdt_disable();
+	TIMER0_DISABLE_PWM_CLK();
 
+	do {
 		// сигнализируем об ошибке
 		DISCHARGING_RL_ENABLE();
 		GPIO_B.port |= _BV(LED_STATUS_PIN);
@@ -303,22 +318,25 @@ void charge_err(void) {
 }
 
 void charge_ok(void) {
-	do {
-		wdt_reset();
-		TIMER0_DISABLE_PWM_CLK();
+	wdt_disable();
+	TIMER0_DISABLE_PWM_CLK();
 
+	do {
 		DISCHARGING_RL_ENABLE();
 		GPIO_B.port |= _BV(LED_STATUS_PIN);
 		_delay_ms(500);
 		DISCHARGING_RL_DISABLE();
 		GPIO_B.port &= ~_BV(LED_STATUS_PIN);
-		_delay_ms(5000);
+		_delay_ms(SEC_TO_MS(10));
 
 	} while (1);
 }
 
 void callback_send_info(void) {
 	char c_buff[8];
+
+	if (!uart_mode_en)
+		return;
 
 	// будем отправлять состояние АКБ только во время разрядки при нагрузке
 	if (!m_cycle.discharging)
@@ -333,6 +351,9 @@ void callback_send_info(void) {
 }
 
 void callback_blink_led(void) {
+	if (uart_mode_en)
+		return;
+
 	for (uint8_t i = 0; i < led_blink_times; ++i) {
 		GPIO_B.port |= _BV(LED_STATUS_PIN);
 		_delay_ms(250);

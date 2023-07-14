@@ -18,7 +18,7 @@
 #define DISCH_PIN						(PB0)
 #define POT_CHARGE_SET_PIN				(PB3)
 #define BAT_LEVEL_ADC_PIN				(PB5)
-#define LED_STATUS_PIN					(PB4)
+#define LED_STATUS_PIN					(PB2) // PB2 используется так же в UART режиме
 
 #define MAX_CHARGE_CYCLE_IN_DAYS		(5u) // 5 дней работаем
 #define MAX_CHARGE_TIME_IN_HOUR			(8u)
