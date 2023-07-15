@@ -83,6 +83,15 @@ void main(void) {
 		timer_millis_task_tick(&callback_send_info, &last_send_info_v, SEC_TO_MS(1));
 		timer_millis_task_tick(&callback_blink_led, &last_led_blink_v, SEC_TO_MS(2.5));
 
+		// считаем, что у нас на потенциометрах
+		ADC_SET_CHANNEL(ADC_CHANNEL_3);
+		ADC_START_CONV();
+		pot_charge_set = (uint8_t) (ADC / (1024 / MAX_CHARGE_TIME_IN_HOUR)) + 1;
+
+		ADC_SET_CHANNEL(ADC_CHANNEL_2);
+		ADC_START_CONV();
+		max_mday = (uint8_t) (ADC / (1024 / MAX_CHARGE_CYCLE_IN_DAYS)) + 1;
+
 		// считаем, сколько уже дней работает цикл заряда-разряда АКБ
 		if (last_mday != time_d.tm_mday) {
 			last_mday = time_d.tm_mday;
@@ -92,15 +101,6 @@ void main(void) {
 		// если за эти дни мы не вышли из цикла, то уходим в аварию
 		if (start_mday >= (max_mday + 1) && !m_cycle.full_curr_state)
 			charge_err();
-
-		// считаем, что у нас на потенциометрах
-		ADC_SET_CHANNEL(ADC_CHANNEL_2);
-		ADC_START_CONV();
-		max_mday = (uint8_t) (ADC / (1024 / MAX_CHARGE_CYCLE_IN_DAYS)) + 1;
-
-		ADC_SET_CHANNEL(ADC_CHANNEL_3);
-		ADC_START_CONV();
-		pot_charge_set = (uint8_t) (ADC / (1024 / MAX_CHARGE_TIME_IN_HOUR)) + 1;
 
 		// батарею нужно разрядить до 10.5
 		if (m_cycle.discharging) {
@@ -117,12 +117,12 @@ void main(void) {
 			if (get_battery_level() > TARGET_CHARGE_LEVEL_DISCH)
 				continue;
 
-			send_uart_msg("DISCH_END\n");
-
 			if (start_mday <= max_mday)
 				m_cycle.state = CHARGE_CYCLE_STATE_HALF; // батарея разрядилась - переходим к следующему режиму
 			else
-				m_cycle.state = CHARGE_CYCLE_STATE_FULL; // или завершаем зарядку. Переходим на FULL CHARGE
+				m_cycle.state = CHARGE_CYCLE_STATE_FULL; // или завершаем цикл. Переходим на FULL CHARGE
+
+			send_uart_msg("DISCH_END\n");
 
 			continue;
 		}
@@ -232,8 +232,6 @@ void init_me(void) {
 	GPIO_B.ddr &= ~_BV(LED_STATUS_PIN);
 	if (GPIO_B.pin & _BV(LED_STATUS_PIN))
 		uart_mode_en = TRUE;
-
-	_delay_ms(SEC_TO_MS(1));
 
 	GPIO_B.ddr |= _BV(LED_STATUS_PIN) | _BV(DISCH_PIN);
 	GPIO_B.port |= _BV(LED_STATUS_PIN);

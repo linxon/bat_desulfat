@@ -20,7 +20,7 @@
 #define BAT_LEVEL_ADC_PIN				(PB5)
 #define LED_STATUS_PIN					(PB2) // PB2 используется так же в UART режиме
 
-#define MAX_CHARGE_CYCLE_IN_DAYS		(5u) // 5 дней работаем
+#define MAX_CHARGE_CYCLE_IN_DAYS		(7u) // 7 дней работаем
 #define MAX_CHARGE_TIME_IN_HOUR			(8u)
 #define MAX_DISCH_TIME_IN_HOUR			MAX_CHARGE_TIME_IN_HOUR
 
@@ -29,9 +29,9 @@
 #define CHARGE_CYCLE_STATE_PULSE		(0x4)
 #define CHARGE_CYCLE_STATE_FULL			(0x8)
 
-#define TARGET_CHARGE_LEVEL_DISCH		(10.5) //  //11.8
-#define TARGET_CHARGE_LEVEL_HALF		(12.2) // 10.9 - под нагрузкой 20W
-#define TARGET_CHARGE_LEVEL_PULSE		(12.7) // 11.4
+#define TARGET_CHARGE_LEVEL_DISCH		(11.8f) // 10.5
+#define TARGET_CHARGE_LEVEL_HALF		(12.2f) // 10.9 - под нагрузкой 20W
+#define TARGET_CHARGE_LEVEL_PULSE		(12.7f) // 11.4
 #define TARGET_CHARGE_LEVEL_FULL		TARGET_CHARGE_LEVEL_PULSE
 
 #define DISCHARGING_RL_ENABLE()			(GPIO_B.port |= _BV(DISCH_PIN))
