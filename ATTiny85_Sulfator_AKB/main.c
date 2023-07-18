@@ -278,21 +278,15 @@ void send_uart_msg(const char *s) {
 }
 
 float get_battery_level(void) {
-	_delay_ms(100);
+	float v_in;
 
+	_delay_ms(100);
 	ADC_SET_CHANNEL(ADC_CHANNEL_0);
 	ADC_START_CONV();
 
-	/*
-		15.0 - 2.29
-		14.0 - 2.14
-		13.0 - 1.99
-		12.0 - 1.84
-		11.0 - 1.69
-		10.0 - 1.54
-		2.29 / d0.15 = 15.26
-	*/
-	return v_bat = (ADC / (918 / 15.0));
+	v_in = (ADC * ADC_REFS_VOLTAGE) / ADC_MAX_RESOLUTION;
+
+	return v_bat = v_in / (ADC_RESISTOR_CALC / ADC_MAX_VBAT_VOLTAGE);
 }
 
 void charge_err(void) {

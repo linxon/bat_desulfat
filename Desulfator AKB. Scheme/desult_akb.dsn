@@ -199,16 +199,6 @@ download the executable.-->
 			<COLOR>000000</COLOR>
 			<THICKNESS>1</THICKNESS>
 		</STYLE>
-		<STYLE id='5'>
-			<STYLE>0</STYLE>
-			<COLOR>000000</COLOR>
-			<THICKNESS>1</THICKNESS>
-		</STYLE>
-		<STYLE id='7'>
-			<STYLE>0</STYLE>
-			<COLOR>FF0000</COLOR>
-			<THICKNESS>1</THICKNESS>
-		</STYLE>
 		<STYLE id='9'>
 			<STYLE>0</STYLE>
 			<COLOR>000000</COLOR>
@@ -2131,7 +2121,7 @@ download the executable.-->
 				<PIN pos='58.00000,48.00000' which='0' elec='0' direction='1' part='0' number='1' show='0' length='0' number_pos='0' centre_name='0'></PIN>
 			</TinyCAD>
 		</SYMBOLDEF>
-		<SYMBOLDEF id='48'>
+		<SYMBOLDEF id='38'>
 			<NAME type='0'>FUSE</NAME>
 			<REF type='0'>F?</REF>
 			<DESCRIPTION>Fuse</DESCRIPTION>
@@ -2162,11 +2152,11 @@ download the executable.-->
 			<TinyCAD>
 				<PIN pos='62.00000,34.00000' which='0' elec='4' direction='1' part='0' number='2' show='0' length='30' number_pos='0' centre_name='0'></PIN>
 				<PIN pos='62.00000,54.00000' which='0' elec='4' direction='0' part='0' number='1' show='0' length='30' number_pos='0' centre_name='0'></PIN>
-				<POLYGON pos='62.00000,40.00000' style='5' fill='0' polygon='0'>
+				<POLYGON pos='62.00000,40.00000' style='9' fill='0' polygon='0'>
 					<POINT pos='0.00000,0.00000' arc='0'/>
 					<POINT pos='0.00000,8.00000' arc='0'/>
 				</POLYGON>
-				<RECTANGLE a='60.00000,40.00000' b='64.00000,48.00000' style='5' fill='0'/>
+				<RECTANGLE a='60.00000,40.00000' b='64.00000,48.00000' style='9' fill='0'/>
 			</TinyCAD>
 		</SYMBOLDEF>
 		<OPTIONS>
@@ -2746,7 +2736,7 @@ download the executable.-->
 		<WIRE a='23.00000,126.00000' b='33.00000,126.00000'/>
 		<WIRE a='33.00000,115.00000' b='33.00000,126.00000'/>
 		<JUNCTION pos='33.00000,126.00000'/>
-		<NOTE_TEXT a='224.00000,70.00000' b='264.00000,85.00000' direction='3' style='7' fill='5' font='15' color='000000' border_style='2'>В качестве К1 подойдет автомобильное, пятиконтактное реле на 12V марки 90.3747</NOTE_TEXT>
+		<NOTE_TEXT a='224.00000,70.00000' b='264.00000,85.00000' direction='3' style='11' fill='5' font='15' color='000000' border_style='2'>В качестве К1 подойдет автомобильное, пятиконтактное реле на 12V марки 90.3747</NOTE_TEXT>
 		<SYMBOL id='7' pos='177.00000,180.00000' part='0' rotate='2' can_scale='0' show_power='0' scale_x='1.00000' scale_y='1.00000'>
 			<FIELD type='0' description='Ref' value='R?' show='1' pos='-7.00000,-2.00000'/>
 			<FIELD type='0' description='Name' value='330' show='1' pos='-11.00000,-2.00000'/>
@@ -2811,7 +2801,7 @@ download the executable.-->
 		<TEXT pos='216.00000,93.50000' direction='3' font='3' color='000000'>A</TEXT>
 		<WIRE a='252.50000,92.00000' b='224.00000,92.00000'/>
 		<WIRE a='200.00000,92.00000' b='210.00000,92.00000'/>
-		<SYMBOL id='48' pos='274.00000,94.00000' part='0' rotate='2' can_scale='0' show_power='0' scale_x='1.00000' scale_y='1.00000'>
+		<SYMBOL id='38' pos='274.00000,94.00000' part='0' rotate='2' can_scale='0' show_power='0' scale_x='1.00000' scale_y='1.00000'>
 			<FIELD type='0' description='Ref' value='F2' show='1' pos='-14.00000,3.00000'/>
 			<FIELD type='0' description='Name' value='MAX: 250V 0.2A' show='1' pos='-17.00000,-5.00000'/>
 			<FIELD type='2' description='$$SPICE_PROLOG_PRIORITY' value='5' show='0' pos='0.00000,0.00000'/>

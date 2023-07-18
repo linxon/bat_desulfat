@@ -79,6 +79,10 @@
 			next_state = 0x1;					\
 	} while (0)
 
+#define ADC_MAX_VBAT_VOLTAGE			(15.0)
+#define ADC_REFS_VOLTAGE				(2.56)
+#define ADC_MAX_RESOLUTION				(1024.0)
+#define ADC_RESISTOR_CALC				((1000.0 / (5600.0 + 1000.0)) * ADC_MAX_VBAT_VOLTAGE)
 #define ADC_CHANNEL_0					(0x0)
 #define ADC_CHANNEL_1					(0x1)
 #define ADC_CHANNEL_2					(0x2)
@@ -89,7 +93,6 @@
 		ADCSRA |= _BV(ADSC);					\
 		while (ADCSRA & (1 << ADSC));			\
 	} while(0)
-
 
 typedef union charge_cycle {
 	byte state;
