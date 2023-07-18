@@ -98,11 +98,16 @@ void main(void) {
 			start_mday++;
 		}
 
+		// если напряжение больше 15-ти вольт, то зарядку нужно прекратить, так как
+		// такое напряжение приведет к повреждению АКБ
+		if (v_bat > 15.2)
+			charge_alert(CHARGE_STATUS_VOLTAGE_ERR);
+
 		// если за эти дни мы не вышли из цикла, то уходим в аварию
 		if (start_mday >= (max_mday + 1) && !m_cycle.full_curr_state)
-			charge_err();
+			charge_alert(CHARGE_STATUS_MAX_DAY_ERR);
 
-		// батарею нужно разрядить до 10.5
+		// батарею нужно разрядить до 11.8
 		if (m_cycle.discharging) {
 			if (DISCHARGING_RL_STATE() == LOW) {
 				TIMER0_DISABLE_PWM_CLK(); // отключаем подачу импульсов
@@ -113,7 +118,7 @@ void main(void) {
 				send_uart_msg("DISCH_START\n");
 			}
 
-			// ждем, когда батарея разрядится до 10.5В
+			// ждем, когда батарея разрядится до 11.8В
 			if (get_battery_level() > TARGET_CHARGE_LEVEL_DISCH)
 				continue;
 
@@ -186,7 +191,7 @@ void main(void) {
 				_delay_ms(500); // ждем, когда реле переключится и разогреется зарядная лампа
 				TIMER0_ENABLE_PWM_CLK();
 
-				start_time = time(NULL);
+				start_time = time(NULL); // обновляем время для повторной пробы
 			}
 
 			// ждем 1-8 часов зарядки в режиме пульсации
@@ -218,7 +223,7 @@ void main(void) {
 			send_uart_msg("CYCLE_END\n");
 
 			m_cycle.full_curr_state = FALSE;
-			charge_ok(); // и уходим в режим индикации "Готово"
+			charge_alert(CHARGE_STATUS_OK); // и уходим в режим индикации "Готово"
 		}
 
 	} while(1);
@@ -289,39 +294,43 @@ float get_battery_level(void) {
 	return v_bat = v_in / (ADC_RESISTOR_CALC / ADC_MAX_VBAT_VOLTAGE);
 }
 
-void charge_err(void) {
+void charge_alert(CHARGE_STATUS_t stat) {
 	wdt_disable();
 	TIMER0_DISABLE_PWM_CLK();
 
-	do {
-		// сигнализируем об ошибке
-		DISCHARGING_RL_ENABLE();
-		GPIO_B.port |= _BV(LED_STATUS_PIN);
-		_delay_ms(500);
-		DISCHARGING_RL_DISABLE();
-		GPIO_B.port &= ~_BV(LED_STATUS_PIN);
-		_delay_ms(500);
-
-		/*
-		if (err_event_ok) // и ждем подтверждения
+	switch (stat) {
+		case CHARGE_STATUS_MAX_DAY_ERR:
+			do {
+				DISCHARGING_RL_ENABLE();
+				GPIO_B.port |= _BV(LED_STATUS_PIN);
+				_delay_ms(500);
+				DISCHARGING_RL_DISABLE();
+				GPIO_B.port &= ~_BV(LED_STATUS_PIN);
+				_delay_ms(500);
+			} while (1);
 			break;
-		*/
-	} while (1);
-}
 
-void charge_ok(void) {
-	wdt_disable();
-	TIMER0_DISABLE_PWM_CLK();
+		case CHARGE_STATUS_VOLTAGE_ERR:
+			DISCHARGING_RL_ENABLE();
+			do {
+				GPIO_B.port |= _BV(LED_STATUS_PIN);
+				_delay_ms(100);
+				GPIO_B.port &= ~_BV(LED_STATUS_PIN);
+				_delay_ms(100);
+			} while (1);
+			break;
 
-	do {
-		DISCHARGING_RL_ENABLE();
-		GPIO_B.port |= _BV(LED_STATUS_PIN);
-		_delay_ms(500);
-		DISCHARGING_RL_DISABLE();
-		GPIO_B.port &= ~_BV(LED_STATUS_PIN);
-		_delay_ms(SEC_TO_MS(10));
-
-	} while (1);
+		case CHARGE_STATUS_OK:
+			do {
+				DISCHARGING_RL_ENABLE();
+				GPIO_B.port |= _BV(LED_STATUS_PIN);
+				_delay_ms(500);
+				DISCHARGING_RL_DISABLE();
+				GPIO_B.port &= ~_BV(LED_STATUS_PIN);
+				_delay_ms(SEC_TO_MS(5));
+			} while (1);
+			break;
+	}
 }
 
 void callback_send_info(void) {

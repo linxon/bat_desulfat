@@ -79,7 +79,7 @@
 			next_state = 0x1;					\
 	} while (0)
 
-#define ADC_MAX_VBAT_VOLTAGE			(15.0)
+#define ADC_MAX_VBAT_VOLTAGE			(16.0)
 #define ADC_REFS_VOLTAGE				(2.56)
 #define ADC_MAX_RESOLUTION				(1024.0)
 #define ADC_RESISTOR_CALC				((1000.0 / (5600.0 + 1000.0)) * ADC_MAX_VBAT_VOLTAGE)
@@ -108,11 +108,16 @@ typedef union charge_cycle {
 	};
 } charge_cycle_t;
 
+typedef enum {
+	CHARGE_STATUS_OK,
+	CHARGE_STATUS_VOLTAGE_ERR,
+	CHARGE_STATUS_MAX_DAY_ERR
+} CHARGE_STATUS_t;
+
 static void init_me(void);
 static void send_uart_msg(const char *s);
 static float get_battery_level(void);
-static void charge_err(void);
-static void charge_ok(void);
+static void charge_alert(CHARGE_STATUS_t stat);
 static void callback_send_info(void);
 static void callback_blink_led(void);
 
